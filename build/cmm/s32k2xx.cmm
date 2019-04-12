@@ -1,0 +1,264 @@
+;====================================================================================================
+;    file        s32k2xx.cmm
+;    version     0.8.1
+;
+;    brief       Integration Framework -  Script for programming of S32K2XX
+;    details     
+;====================================================================================================
+;    Platform        : CORTEXM
+;    Build Version   : S32K2XXS32K2XX_MCAL_0_8_1_EAR_ASR_REL_4_3_REV_0001_20180420
+;
+;   (c) Copyright 2006-2016 Freescale Semiconductor, Inc. 
+;       Copyright 2017 - 2018 NXP
+;       All Rights Reserved.
+;
+;    This file contains sample code only. It is not part of the production code deliverables.
+;
+;
+;========================================================================
+LOCAL &load_to
+LOCAL &elf_file
+LOCAL &load_params
+LOCAL &core_no
+
+ENTRY &load_to &elf_file &load_params &core_no
+
+;PLIST
+;PBREAK.Set 19.
+
+Winclear
+
+SYStem.Down
+Break.RESet
+SYStem.reset
+SYStem.CPU S32K2-M7-HSE
+SYStem.config debugporttype JTAG
+SYStem.Option TRST off
+SYStem.Option ResBreak on
+SYStem.Option WaitReset ON
+        
+;SYStem.JTAGclock 10khz
+;SYStem.Option TRST OFF
+;SYStem.Option EnReset OFF
+;JTAG.PIN NRESET 0
+;JTAG.PIN NTRST 0
+;JTAG.PIN NRESET 1
+;JTAG.PIN NTRST 1
+trace.DISABLE 
+ETM.OFF
+ITM.OFF
+
+;wait 1.s
+
+;SYStem.CONFIG SLAVE ON
+;JTAG.PIN ENable
+;JTAG.SHIFTTMS 0 1
+SYStem.Mode up 
+break
+
+;SWT Disable (HSE)
+D.S SD:0x23230010 %LE %Long 0xC520
+D.S SD:0x23230010 %LE %Long 0xD928
+D.S SD:0x23230000 %LE %Long 0xFF000000
+
+
+;SWT Disable
+;D.S SD:0x40258010 %LE %Long 0xC520
+;D.S SD:0x40258010 %LE %Long 0xD928
+;D.S SD:0x40258000 %LE %Long 0xFF000000
+
+D.S SD:0x4025C010 %LE %Long 0xC520
+D.S SD:0x4025C010 %LE %Long 0xD928
+D.S SD:0x4025C000 %LE %Long 0xFF000000
+
+D.S SD:0x40260010 %LE %Long 0xC520
+D.S SD:0x40260010 %LE %Long 0xD928
+D.S SD:0x40260000 %LE %Long 0xFF000000
+
+
+;ME all Clocks enable
+
+; Partition 0
+D.S SD:0x400DC130 %LE %LONG 0xFD202401  ;  MC_ME.MC_ME_PRTN0_COFB0_CLKEN.R  - Enable clock for block n in partition m
+D.S SD:0x400DC134 %LE %LONG 0xFDFFFFFF  ;  MC_ME.MC_ME_PRTN0_COFB1_CLKEN.R  - Enable clock for block n in partition m
+D.S SD:0x400DC138 %LE %LONG 0x00000002  ;  MC_ME.MC_ME_PRTN0_COFB2_CLKEN.R  - Enable clock for block n in partition m
+D.S SD:0x400DC100 %LE %LONG 0x00000001  ;  MC_ME.MC_ME_PRTN0_PCONF.R        - Enable the clock to IPs
+D.S SD:0x400DC104 %LE %LONG 0x00000001  ;  MC_ME.MC_ME_PRTN0_PUPD.R         - Trigger the hardware process
+D.S SD:0x400DC000 %LE %LONG 0x00005AF0  ;  MC_ME.MC_ME_CTL_KEY.R
+D.S SD:0x400DC000 %LE %LONG 0x0000A50F  ;  MC_ME.MC_ME_CTL_KEY.R
+WHILE ((data.long(AD:0x400DC108)&0x00000001)==0x0)      ;108h Partition 0 Status Register (PRTN0_STAT)
+(
+    ; wait for clock to be active
+)
+WHILE ((data.long(AD:0x400DC110))!=0xFFF3EFF9)      ;110h Partition 0 COFB Set 0 Clock Status Register (PRTN0_COFB0_STAT)
+(
+    ; wait for clock to peripherals to be active
+)
+WHILE ((data.long(AD:0x400DC114))!=0xFFFFFFFF)      ;114h Partition 0 COFB Set 1 Clock Status Register (PRTN0_COFB1_STAT)
+(
+    ; wait for clock to peripherals to be active
+)
+WHILE ((data.long(AD:0x400DC118))!=0x000003FE)      ;118h Partition 0 COFB Set 2 Clock Status Register (PRTN0_COFB2_STAT)
+(
+    ; wait for clock to peripherals to be active
+)
+
+
+; Partition 1
+D.S SD:0x400DC330 %LE %LONG 0xCFCCB401  ;  MC_ME.MC_ME_PRTN1_COFB0_CLKEN.R
+D.S SD:0x400DC334 %LE %LONG 0x0CCF9FFF  ;  MC_ME.MC_ME_PRTN1_COFB1_CLKEN.R 
+D.S SD:0x400DC338 %LE %LONG 0x00000001  ;  MC_ME.MC_ME_PRTN1_COFB2_CLKEN.R
+D.S SD:0x400DC300 %LE %LONG 0x00000001  ;  MC_ME.MC_ME_PRTN1_PCONF.R
+D.S SD:0x400DC304 %LE %LONG 0x00000001  ;  MC_ME.MC_ME_PRTN1_PUPD.R
+D.S SD:0x400DC000 %LE %LONG 0x00005AF0  ;  MC_ME.MC_ME_CTL_KEY.R
+D.S SD:0x400DC000 %LE %LONG 0x0000A50F  ;  MC_ME.MC_ME_CTL_KEY.R
+WHILE ((data.long(AD:0x400DC308)&0x00000001)==0x0)      ;108h Partition 1 Status Register (PRTN1_STAT)
+(
+    ; wait for clock to be active
+)
+WHILE ((data.long(AD:0x400DC310))!=0xCFCCB61D)      ;310h Partition 1 COFB Set 0 Clock Status Register (PRTN1_COFB0_STAT)
+(
+    ; wait for clock to peripherals to be active
+)
+WHILE ((data.long(AD:0x400DC314))!=0xFECF9FFF)      ;314h Partition 1 COFB Set 1 Clock Status Register (PRTN1_COFB1_STAT)
+(
+    ; wait for clock to peripherals to be active
+)
+WHILE ((data.long(AD:0x400DC318))!=0x00000001)      ;318h Partition 1 COFB Set 2 Clock Status Register (PRTN1_COFB2_STAT)
+(
+    ; wait for clock to peripherals to be active
+) 
+
+;DMA SRAM Init
+D.S SD:0x40080003 %LE %BYTE 0x80	;Channel 0 Enable
+D.S SD:0x40014020 %LE %LONG 0x00000000	;SADDR
+D.S SD:0x40014024 %LE %LONG 0x03030000	;SSIZE 3, DSIZE 3, SOFF 0
+D.S SD:0x40014028 %LE %LONG 0x000C0000	;Nbytes
+D.S SD:0x4001402C %LE %LONG 0x00000000	;SLAST
+D.S SD:0x40014030 %LE %LONG 0x20000000	;DADDR
+D.S SD:0x40014034 %LE %LONG 0x00010008	;CITER 1, DOFF 8
+;D.S SD:0x40014038 %LE %LONG 0xFFF40000	;DLASTSGA = -NBYTES
+D.S SD:0x4001403C %LE %LONG 0x00000001	;Start
+WHILE ((data.long(AD:0x40014000)&0x40000000)==0x00000000)      
+(
+    ; wait for DMA DONE bit to be set
+)
+
+; Erase the flash while still on HSE core, as a workaround in case code still executed on the app core in background.
+ON.ERROR.continue       ;Disable error handler temporarily
+FLASH.RESet
+FLASH.Create 1. 0x00000000--0x003FFFFF 0x2000 TARGET long
+FLASH.Create 2. 0x10000000--0x1003FFFF 0x2000 TARGET long
+FLASH.TARGET 0x20080000 0x20081000 0x1000 ~~/demo/arm/flash/long/s32k2.bin    
+FLASH.ERASE 1.
+; Check if sector is erased, and there was no error. (due to flash trimming inconsistencies on this blind assembled chips)
+IF ((Data.Long(AD:0x00000004))!=0xFFFFFFFF)
+(
+    ; Erase failed, try again one more time
+    FLASH.ERASE 1.
+)
+on.ERROR.DEFault    ;Enable the error handler 
+
+
+    FLASH.RESet
+    FLASH.Create 1. 0x00000000--0x003FFFFF 0x2000 TARGET long
+    FLASH.Create 2. 0x10000000--0x1003FFFF 0x2000 TARGET long
+    FLASH.TARGET 0x20080000 0x20081000 0x1000 ~~/demo/arm/flash/long/s32k2.bin 
+    FLASH.ReProgram ALL /Erase
+    Data.Load.Elf ../bin/IntegrationFramework.elf /GLOBTYPES
+    FLASH.ReProgram OFF
+
+; Put HSE core into a loop (within RAM), to avoid issues while setting the flash wait states on the app core.
+D.S SD:HSE_LOOP_ADDR %LE %LONG 0xBF00E7FE   ; add the opcode for "b ."
+R.S PC HSE_LOOP_ADDR
+
+    
+; Enable application core [M7 - CORE2] or [M33 - CORE0]
+Data.Load.Elf ../bin/IntegrationFramework.elf /GLOBTYPES /NoCODE /AnySym
+
+; Set the global variable to 0, to catch the core after reset in startup.s
+VAR.SET RESET_CATCH_CORE=0x5A5A5A5A 
+
+    ; CORE_SETS=2 , M7 application core
+    D.S SD:0x400DC180 %LE %LONG 0x00000001          ;0x400DC180 Partition 0 Core 2 Process Configuration Register (PRTN0_CORE2_PCONF)*/
+    D.S SD:0x400DC184 %LE %LONG 0x00000001          ;0x400DC184 Partition 0 Core 2 Process Update Register (PRTN0_CORE2_PUPD)*/
+    D.S SD:0x400DC18C %LE %LONG BOOT_APP_CORE       ;0x400DC18C Partition 0 Core 2 Address Register (PRTN0_CORE2_ADDR)*/
+    D.S SD:0x400DC000 %LE %LONG 0x00005AF0          ;0x400DC000 Control Key Register (CTL_KEY)
+    D.S SD:0x400DC000 %LE %LONG 0x0000A50F
+    WHILE ((data.long(AD:0x400DC188)&0x00000001)==0x0)      ;188h Partition 0 Core 2 Status Register (PRTN0_CORE0_STAT)
+    (
+        ; wait for core clock to be enabled
+    )
+    ; Detach from M7-HSE core and attach to M7 application core
+    SYStem.CPU S32K2-M7
+
+IF "&core_no"=="0"
+(
+    ; CORE_SETS=0 , M33-0 core
+    D.S SD:0x400DC140 %LE %LONG 0x00000001          ;140h Partition 0 Core 0 Process Configuration Register (PRTN0_CORE0_PCONF)
+    D.S SD:0x400DC144 %LE %LONG 0x00000001          ;144h Partition 0 Core 0 Process Update Register (PRTN0_CORE0_PUPD)
+    D.S SD:0x400DC14C %LE %LONG BOOT_APP_CORE      ;14Ch Partition 0 Core 0 Address Register (PRTN0_CORE0_ADDR)
+    D.S SD:0x400DC000 %LE %LONG 0x00005AF0          ;0x400DC000 Control Key Register (CTL_KEY)
+    D.S SD:0x400DC000 %LE %LONG 0x0000A50F          
+    WHILE ((data.long(AD:0x400DC148)&0x00000001)==0x0)      ;148h Partition 0 Core 0 Status Register (PRTN0_CORE0_STAT)
+    (
+        ; wait for core clock to be enabled
+    )
+    ; Detach from M7-HSE core and attach to M33 application core
+    SYStem.CPU S32K2-M33-0
+)
+IF "&core_no"=="2"
+(
+    ; CORE_SETS=2 , M7 application core
+    D.S SD:0x400DC180 %LE %LONG 0x00000001          ;0x400DC180 Partition 0 Core 2 Process Configuration Register (PRTN0_CORE2_PCONF)*/
+    D.S SD:0x400DC184 %LE %LONG 0x00000001          ;0x400DC184 Partition 0 Core 2 Process Update Register (PRTN0_CORE2_PUPD)*/
+    D.S SD:0x400DC18C %LE %LONG BOOT_APP_CORE       ;0x400DC18C Partition 0 Core 2 Address Register (PRTN0_CORE2_ADDR)*/
+    D.S SD:0x400DC000 %LE %LONG 0x00005AF0          ;0x400DC000 Control Key Register (CTL_KEY)
+    D.S SD:0x400DC000 %LE %LONG 0x0000A50F
+    WHILE ((data.long(AD:0x400DC188)&0x00000001)==0x0)      ;188h Partition 0 Core 2 Status Register (PRTN0_CORE0_STAT)
+    (
+        ; wait for core clock to be enabled
+    )
+    ; Detach from M7-HSE core and attach to M7 application core
+    SYStem.CPU S32K2-M7
+)
+IF "&core_no"=="3"
+(
+    AREA
+    plist
+    print "[BEART]: Error encountered, running code on HSE core (CORE_SETS=3) is not possible."
+    ; Stop the script execution on error in manual mode
+    stop
+)
+
+SYStem.Option DisMode THUMB
+
+SYStem.CONFIG SLAVE ON		; Set debugger in SLAVE mode so that the next Sys.up will not reset the entire system/HSE core (then trigger HSE WDG)
+SYStem.Mode up
+Break
+
+;DMA SRAM Init. Depending on BAF this might be needed or not, the app core to initialize its own memory.
+;D.S SD:0x40080003 %LE %BYTE 0x80	;Channel 0 Enable
+;D.S SD:0x40014020 %LE %LONG 0x00000000	;SADDR
+;D.S SD:0x40014024 %LE %LONG 0x03030000	;SSIZE 3, DSIZE 3, SOFF 0
+;D.S SD:0x40014028 %LE %LONG 0x000C0000	;Nbytes
+;D.S SD:0x4001402C %LE %LONG 0x00000000	;SLAST
+;D.S SD:0x40014030 %LE %LONG 0x20000000	;DADDR
+;D.S SD:0x40014034 %LE %LONG 0x00080008	;CITER 8, DOFF 8
+;D.S SD:0x40014038 %LE %LONG 0xFFF40000	;DLASTSGA = -NBYTES
+;D.S SD:0x4001403C %LE %LONG 0x00000001	;Start
+
+;Release the core from the loop from startup
+VAR.SET RESET_CATCH_CORE=0
+
+
+; Workaround to disable the BATC in ACTLR
+PER.Set.simple AD:0xE000E008 %Long 0x7c00
+
+Mode.Hll
+WinPOS 84.125 0.0 63. 41. 0. 0. W001
+Per , /SPOTLIGHT 
+WinPOS 84.25 45.0 63. 12. 0. 0. W000
+Register /SPOTLIGHT
+
+ENDDO

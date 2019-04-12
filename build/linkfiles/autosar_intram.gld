@@ -1,0 +1,143 @@
+/*==================================================================================================
+
+   @file        autosar_intram.gld
+   @version     0.8.1
+
+   @brief       GCC Linker Command File for S32K2XX
+   @details     GCC Linker Command File for S32K2XX
+                This file contains sample code only. It is not part of the production code deliverables
+====================================================================================================    
+   Project      : AUTOSAR 4.3 MCAL
+   Platform     : CORTEXM
+   Peripheral   : Pit
+   Dependencies : none
+   
+   Autosar Version       : 4.3.1
+   Autosar Revision      : ASR_REL_4_3_REV_0001
+   Autosar Conf. Variant : 
+   Software Version      : 0.8.1
+   Build Version         : S32K2XXS32K2XX_MCAL_0_8_1_EAR_ASR_REL_4_3_REV_0001_20180420
+
+   (c) Copyright 2006-2016 Freescale Semiconductor, Inc. 
+*       Copyright 2017-2018 NXP
+   All Rights Reserved.
+
+====================================================================================================
+
+Note: This linker command file to be used with S32K2XX device only.
+==================================================================================================*/
+
+MEMORY
+{
+    /* S32K2XX - 2000_0000	2003_FFFF	256KB PRAM0 */
+    /* S32K2XX - 2004_0000	2007_FFFF	256KB PRAM1 */
+    /* S32K2XX - 2008_0000	200B_FFFF	256KB PRAM1 */
+    int_sram (rwx)               : ORIGIN = 0x20000000, LENGTH = 0xBEF00 	/* 768K - 0x60 - 0x90 - 0x100 */
+    int_results (rwx)            : ORIGIN = 0x200BEF00, LENGTH = 0x100      /* Update also TEST_BASE_ADDR if this address is changed. */  
+    ram_rsvd2                    : ORIGIN = 0x200BF000, LENGTH = 0
+    hse_loop_sec                 : ORIGIN = 0x200BF000, LENGTH = 0x10       /* A reserved ram in which the hse core can loop */
+}
+
+SECTIONS
+{
+     /* Interrupt vectors table */
+    .all :
+    {
+    	INT_SRAM_START = .;
+        *(.intc_vector)
+        *(.startup)             /* reset code */
+        *(.systeminit)          /* SystemInit */
+        *(.text.startup)
+        
+        /* Code area */
+        . = ALIGN(0x20);
+        *(.text)
+        *(.mcal_text)
+        *(.ramcode)
+         
+        
+        /* -------------------------------------- Constant Area ------------------------------------ */
+        . = ALIGN(0x4);
+        *(.rodata)
+        . = ALIGN(0x4);
+        *(.mcal_const_cfg)
+        . = ALIGN(0x4);
+        *(.mcal_const)  
+        
+        /* -------------------------------------- DATA sections --------------------------------- */
+        . = ALIGN(0x4);
+        *(.data)
+        . = ALIGN(0x4);
+        *(.mcal_data)
+        . = ALIGN(0x4);
+        *(.mcal_data_no_cacheable)
+        
+        /* ------------------------------------   BSS sections ------------------------------------ */
+        . = ALIGN(0x10);  
+	BSS_SRAM_START = .; 
+        *(.bss)
+        . = ALIGN(0x4);
+        *(.mcal_bss)
+        . = ALIGN(0x4);
+        *(.mcal_bss_no_cacheable)
+	BSS_SRAM_END = .;
+	} > int_sram
+        
+    /* -------------------------------------- FLS/EEP AC sections ------------------------------------ */
+    .acfls_code_ram :
+    {
+        . = ALIGN(0x4);
+        *(.acfls_code_ram)
+    } > int_sram 
+    .aceep_code_ram :
+    {        
+        . = ALIGN(0x4);
+        *(.aceep_code_ram)
+    } > int_sram   
+    .acfls_code_rom :
+    {
+        . = ALIGN(0x4);
+        *(.acfls_code_rom)
+    } > int_sram
+    .aceep_code_rom :
+    {
+        . = ALIGN(0x4);
+        *(.aceep_code_rom)
+    } > int_sram
+    .acmcu_code_rom :
+    {
+        . = ALIGN(0x4);
+        *(.acmcu_code_rom)
+    } > int_sram
+    
+    .stack :
+    {
+	. = ALIGN(0x10); 
+        _Stack_end  = .;
+        *(.stack_main)
+        _Stack_start = .;
+	INT_SRAM_END = .;
+    } > int_sram
+        
+    BOOT_APP_CORE       = ORIGIN(.intc_vector);
+    HSE_LOOP_ADDR       = ORIGIN(hse_loop_sec);
+    
+    /* Fls module access code support */    
+    Fls_ACEraseRomStart         = ADDR(.acfls_code_rom);
+    Fls_ACEraseRomEnd           = ADDR(.acfls_code_rom) + SIZEOF(.acfls_code_rom);
+    Fls_ACEraseSize             = (SIZEOF(.acfls_code_rom) + 3) / 4; /* Copy 4 bytes at a time*/
+
+    Fls_ACWriteRomStart         = ADDR(.acfls_code_rom);
+    Fls_ACWriteRomEnd           = ADDR(.acfls_code_rom) + SIZEOF(.acfls_code_rom);
+    Fls_ACWriteSize             = (SIZEOF(.acfls_code_rom) + 3) / 4; /* Copy 4 bytes at a time*/
+    
+    _ERASE_FUNC_ADDRESS_        = ADDR(.acfls_code_ram);
+    _WRITE_FUNC_ADDRESS_        = ADDR(.acfls_code_ram);
+
+    /* Eep module access code support */    
+    Eep_ACWriteRomStart         = ADDR(.aceep_code_rom);
+    Eep_ACWriteRomEnd           = ADDR(.aceep_code_rom) + SIZEOF(.aceep_code_rom);
+    Eep_ACWriteSize             = (SIZEOF(.aceep_code_rom) + 3) / 4; /* Copy 4 bytes at a time*/
+
+    _WRITE_FUNC_ADDRESS_EEP_    = ADDR(.aceep_code_ram);
+}

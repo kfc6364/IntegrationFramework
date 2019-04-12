@@ -1,0 +1,212 @@
+/*==================================================================================================
+
+   @file        autosar_flash.ld
+   @version     0.8.1
+
+   @brief       GCC Linker Command File
+   @details     GCC Linker Command File
+                This file contains sample code only. It is not part of the production code deliverables
+====================================================================================================    
+   Project      : AUTOSAR 4.3 MCAL
+   Platform     : CORTEXM
+   Peripheral   : Pit
+   Dependencies : none
+   
+   Autosar Version       : 4.3.1
+   Autosar Revision      : ASR_REL_4_3_REV_0001
+   Autosar Conf. Variant : 
+   Software Version      : 0.8.1
+   Build Version         : S32K2XXS32K2XX_MCAL_0_8_1_EAR_ASR_REL_4_3_REV_0001_20180420
+
+   (c) Copyright 2006-2016 Freescale Semiconductor, Inc. 
+*       Copyright 2017-2018 NXP
+   All Rights Reserved.
+
+====================================================================================================
+
+Note: This linker command file to be used with S32K2XX device only.
+==================================================================================================*/
+
+MEMORY
+{
+    /* S32K2XX - 4 MB Flash in range 0x00000000:0x003FFFFF */
+    flash_rsvd1    : ORIGIN = 0x00000000, LENGTH = 0x400
+    flash_memory   : ORIGIN = 0x00000400, LENGTH = 0x3FFC00
+    
+    /* S32K2XX - 2000_0000	2003_FFFF	256KB PRAM0 */
+    /* S32K2XX - 2004_0000	2007_FFFF	256KB PRAM1 */
+    /* S32K2XX - 2008_0000	200B_FFFF	256KB PRAM1 */
+    int_sram (rwx)              : ORIGIN = 0x20000000, LENGTH = 0x80000      /* 512K */
+    int_sram_no_cacheable (rw)  : ORIGIN = 0x20080000, LENGTH = 0x3EE00      /* ~256K - if changed, sync with sys_init */
+    res_ram_fls                 : ORIGIN = 0x200BED80, LENGTH = 0x60         /* A reserved ram section needed by FLS driver */
+    res_ram_eep                 : ORIGIN = 0x200BEDE0, LENGTH = 0x90         /* A reserved ram section needed by EEP driver */
+    res_ram_mcu                 : ORIGIN = 0x200BEE70, LENGTH = 0x90         /* A reserved ram section needed by MCU driver */
+    int_results                 : ORIGIN = 0x200BEF00, LENGTH = 0x100   	 /* Update also TEST_BASE_ADDR if this address is changed. */
+    ram_rsvd2                   : ORIGIN = 0x200BF000, LENGTH = 0
+    hse_loop_sec                : ORIGIN = 0x200BF000, LENGTH = 0x10         /* A reserved ram in which the hse core can loop */
+}
+
+SECTIONS
+{
+   .ROM.intc_vector_rom :{   *(.intc_vector_rom)
+                        } >  flash_rsvd1                                       
+   
+   .ROM.text :          {   *(.startup)    
+                            *(.systeminit)    
+                            *(.text.startup)
+                            *(.text)
+                            *(.text.*)
+                            *(.mcal_text)
+                        } > flash_memory
+                        
+   .ROM.acfls_code_rom ALIGN(4) : {   
+                            *(.acfls_code_rom)
+                        } > flash_memory                        
+
+   .ROM.aceep_code_rom ALIGN(4) : {   
+                            *(.aceep_code_rom)
+                        } > flash_memory                       
+
+   .ROM.acmcu_code_rom ALIGN(4) : {   
+                            *(.acmcu_code_rom)
+                        } > flash_memory                        
+
+/* -------------------------------------- Constant Area ------------------------------------ */
+    .ROM.rodata :       {
+                            *(.rodata)
+                            *(.rodata*)
+                            *(.mcal_const_cfg)
+                            *(.mcal_const)  
+                            _load_ram_rom = .;
+                        } > flash_memory
+
+/* -------------------------------------- Relocatable Data and Code Area ------------------------------------ */
+    .intc_vector : AT (_load_ram_rom )
+                        {
+                            intc_vector_start = .;
+                            *(.intc_vector);
+                            intc_vector_stop = .;
+                        } > int_sram
+                        
+    .ramcode :  AT(_load_ram_rom + SIZEOF(.intc_vector))
+                        {
+                            ramcode_start = .;
+                            *(.ramcode)
+                            ramcode_end = .;
+                        } > int_sram
+    .data :     AT(_load_ram_rom + SIZEOF(.intc_vector) + SIZEOF(.ramcode))
+                        {
+                            data_start = .;
+                            *(.data)
+                            *(.mcal_data)
+                            data_end = .;
+                        }> int_sram
+    .bss :              { 
+                            . = ALIGN(0x10); 
+                            BSS_SRAM_START = .;
+                            *(.bss)
+                            *(.mcal_bss)
+                            BSS_SRAM_END = .;
+                        }>int_sram  
+    .stack :            {
+                            . = ALIGN(0x10);
+                            _Stack_end  = .;
+                            *(.stack_main)
+                            _Stack_start = .;
+                        }>int_sram
+                        
+                        
+    .bss_no_cacheable ALIGN(0x20): 
+                        { 
+                            *(.mcal_bss_no_cacheable)
+                        }>int_sram_no_cacheable 
+    .data_no_cacheable ALIGN(0x20):     AT(_load_ram_rom + SIZEOF(.intc_vector) + SIZEOF(.ramcode) + SIZEOF(.data))
+                        {
+                            *(.mcal_data_no_cacheable)
+                        }> int_sram_no_cacheable    
+                        
+                        
+    .acfls_code_ram :  {
+                            acfls_code_ram_start  = .;
+                            *(.acfls_code_ram)
+                            acfls_code_ram_stop   = .;
+                        }>res_ram_fls
+                        
+    .aceep_code_ram :  {
+                            aceep_code_ram_start  = .;
+                            *(.aceep_code_ram)
+                            aceep_code_ram_stop   = .;
+                        }>res_ram_eep
+                        
+    .acmcu_code_ram :  {
+                            acmcu_code_ram_start  = .;
+                            *(.acmcu_code_ram)
+                            acmcu_code_ram_stop   = .;
+                        }>res_ram_mcu
+
+    BOOT_APP_CORE       = ADDR(.ROM.intc_vector_rom);
+    HSE_LOOP_ADDR       = ORIGIN(hse_loop_sec);
+    
+    INT_SRAM_START      = ORIGIN(int_sram);
+    /*INT_SRAM_SIZE       = (ORIGIN(ram_rsvd2) - ORIGIN(int_sram)) / 4 ; */                    /* Init 64 bytes at a time */
+    INT_SRAM_END        = ORIGIN(ram_rsvd2);
+    
+    /* sbss section is not generated by GCC */
+    SBSS_SRAM_START     = 0;
+    SBSS_SRAM_SIZE      = 0;            /* Init 4 bytes at a time*/
+    
+    /* BSS_SRAM_START      = ADDR(.bss);*/
+    /* BSS_SRAM_SIZE       = (SIZEOF(.bss) + 3) / 4;*/   /* Init 4 bytes at a time*/
+
+    BSS_NO_CACHEABLE_SRAM_START      = ADDR(.bss_no_cacheable);
+    BSS_NO_CACHEABLE_SRAM_SIZE       = SIZEOF(.bss_no_cacheable);  
+    BSS_NO_CACHEABLE_SRAM_END        = ADDR(.bss_no_cacheable)+SIZEOF(.bss_no_cacheable);  
+
+    RC_RAMCODE_SRC =  LOADADDR(.ramcode);
+    RC_RAMCODE_DEST = ADDR(.ramcode);
+    RC_RAMCODE_SIZE = (SIZEOF(.ramcode) + 3) / 4;         /* Copy 4 bytes at a time*/
+    
+    /* generate symbols used in start-up code to init .intc_vector section */
+    RC_INTC_VECTOR_SRC  =  LOADADDR(.intc_vector);
+    RC_INTC_VECTOR_DEST = ADDR(.intc_vector);
+    RC_INTC_VECTOR_SIZE = (SIZEOF(.intc_vector)+ 3 ) / 4;  /* Copy 4 bytes at a time */
+    
+    /* sdata section is not generated by ARM GCC*/
+    RC_SDATA_SRC        = 0;
+    RC_SDATA_DEST       = 0;
+    RC_SDATA_SIZE       = 0;          /* Copy 4 bytes at a time */
+    RC_DATA_SRC         = LOADADDR(.data);
+    RC_DATA_DEST        = ADDR(.data);
+    RC_DATA_SIZE        = (SIZEOF(.data) + 3) / 4;  /* Copy 4 bytes at a time */
+
+    /* generate symbols used in start-up code to init .mcal_data_no_cacheable section */
+    RC_DATA_NO_CACHEABLE_SRC    = LOADADDR(.data_no_cacheable);
+    RC_DATA_NO_CACHEABLE_DEST   = ADDR(.data_no_cacheable);
+    RC_DATA_NO_CACHEABLE_SIZE   = (SIZEOF(.data_no_cacheable) + 3) / 4;  /* Copy 4 bytes at a time */
+        
+    __RAM_NO_CACHEABLE_START    = ORIGIN(int_sram_no_cacheable);
+    __RAM_NO_CACHEABLE_SIZE     = LENGTH(int_sram_no_cacheable);
+    __RAM_NO_CACHEABLE_END      = ORIGIN(int_sram_no_cacheable) + LENGTH(int_sram_no_cacheable);
+    __RAM_CACHEABLE_START       = ORIGIN(int_sram);
+    __RAM_CACHEABLE_SIZE        = LENGTH(int_sram);
+    __RAM_CACHEABLE_END         = ORIGIN(int_sram) + LENGTH(int_sram);
+
+    /* Fls module access code support */    
+    Fls_ACEraseRomStart         = ADDR(.ROM.acfls_code_rom);
+    Fls_ACEraseRomEnd           = ADDR(.ROM.acfls_code_rom) + SIZEOF(.ROM.acfls_code_rom);
+    Fls_ACEraseSize             = (SIZEOF(.ROM.acfls_code_rom) + 3) / 4; /* Copy 4 bytes at a time*/
+
+    Fls_ACWriteRomStart         = ADDR(.ROM.acfls_code_rom);
+    Fls_ACWriteRomEnd           = ADDR(.ROM.acfls_code_rom) + SIZEOF(.ROM.acfls_code_rom);
+    Fls_ACWriteSize             = (SIZEOF(.ROM.acfls_code_rom) + 3) / 4; /* Copy 4 bytes at a time*/
+    
+    _ERASE_FUNC_ADDRESS_        = ADDR(.acfls_code_ram);
+    _WRITE_FUNC_ADDRESS_        = ADDR(.acfls_code_ram);
+
+    /* Eep module access code support */    
+    Eep_ACWriteRomStart         = ADDR(.ROM.aceep_code_rom);
+    Eep_ACWriteRomEnd           = ADDR(.ROM.aceep_code_rom) + SIZEOF(.ROM.aceep_code_rom);
+    Eep_ACWriteSize             = (SIZEOF(.ROM.aceep_code_rom) + 3) / 4; /* Copy 4 bytes at a time*/
+
+    _WRITE_FUNC_ADDRESS_EEP_    = ADDR(.aceep_code_ram);
+}

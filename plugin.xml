@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+
+<!--
+*   @file    plugin.xml
+*   @version 0.8.1
+*
+*   @brief   AUTOSAR IntegrationFramework_TS_T40D17M8I1R0 - Tresos Studio plugin configuration file.
+*   @details This file contains the configuration for and IntegrationFramework Tresos Studio plugin.
+-->
+<!--
+====================================================================================================
+*   Project              : AUTOSAR 4.3 MCAL
+*   Platform             : CORTEXM
+*   Peripheral           : Pit
+*   Dependencies         : none
+*
+*   Autosar Version      : 4.3.1
+*   Autosar Revision     : ASR_REL_4_3_REV_0001
+*   Autosar Conf.Variant :
+*   SW Version           : 0.8.1
+*   Build Version        : S32K2XXS32K2XX_MCAL_0_8_1_EAR_ASR_REL_4_3_REV_0001_20180420
+*
+*   Copyright 2006-2016 Freescale Semiconductor, Inc.  Copyright 2017-2018 NXP
+*   All Rights Reserved.
+====================================================================================================
+====================================================================================================
+====================================================================================================
+-->
+
+<plugin>
+  <extension point="dreisoft.tresos.launcher2.plugin.module"
+             id="IntegrationFramework_TS_T40D17M8I1R0_ModuleId"
+             name="IntegrationFramework_TS_T40D17M8I1R0 Module">
+
+    <module id="IntegrationFramework_TS_T40D17M8I1R0"
+            label="IntegrationFramework"
+            mandatory="false"
+            allowMultiple="false"
+            description="IntegrationFramework BSW module"
+            copyright="Copyright 2006-2016 Freescale Semiconductor, Inc.  Copyright 2017-2018 NXP"
+            swVersionMajor="0"
+            swVersionMinor="8"
+            swVersionPatch="1"
+            swVersionSuffix="EAR"
+            specVersionMajor="0"
+            specVersionMinor="4"
+            specVersionPatch="4"
+            specVersionSuffix="Rev_0000"
+            relVersionPrefix="AUTOSAR"
+            relVersionMajor="4"
+            relVersionMinor="3"
+            relVersionPatch="1"
+            relVersionSuffix="0001"
+            categoryType="IntegrationFramework"
+            categoryLayer="MCAL"
+            categoryCategory="ECU Firmware"
+            categoryComponent="ECUC">
+      <ecuType target="CORTEXM" derivate="S32K2XXM7"/>
+
+    </module>
+    </extension>
+   
+  <extension point="dreisoft.tresos.launcher2.plugin.configuration"
+             id="IntegrationFramework_TS_T40D17M8I1R0_ConfigId"
+             name="IntegrationFramework_TS_T40D17M8I1R0 Configuration">
+    <configuration moduleId="IntegrationFramework_TS_T40D17M8I1R0">
+      <schema>
+        <manager class="dreisoft.tresos.autosar2.resourcehandling.AutosarSchemaManager"/>
+          <!-- register the main xdm configuration schema for IntegrationFramework -->
+          <resource value="config/IntegrationFramework.xdm" type="xdm"/>
+
+
+
+
+      </schema>
+
+      <data>
+        <manager class="dreisoft.tresos.autosar2.resourcehandling.AutosarConfigManager"/>
+        <schemaNode path="ASPath:/TS_T40D17M8I1R0/IntegrationFramework"/>
+      </data>
+
+      <editor id="IntegrationFramework_TS_T40D17M8I1R0_EditorId"
+              label="Default"
+              tooltip="IntegrationFramework BSW module">
+        <class class="dreisoft.tresos.launcher2.editor.GenericConfigEditor">
+          <parameter name="schema" value="ASPath:/TS_T40D17M8I1R0/IntegrationFramework"/>
+          <parameter name="title" value="IntegrationFramework"/>
+          <parameter name="noTabs" value="false"/>
+          <parameter name="noLinks" value="true"/>
+          <parameter name="groupLinks" value="false"/>
+          <parameter name="groupContainers" value="false"/>
+          <parameter name="groupTables" value="true"/>
+          <parameter name="optionalGeneralTab" value="true"/>
+        </class>
+      </editor>
+    </configuration>
+  </extension>
+
+ <extension point="dreisoft.tresos.launcher2.plugin.generator"
+             id="EPCGenerator"
+             name="EPC Generator">
+  <generator moduleId="IntegrationFramework_TS_T40D17M8I1R0"
+               id="IntegrationFramework_TS_T40D17M8I1R0"
+               class="dreisoft.tresos.autosar2.generator.EPCFileGenerator">
+   
+  <parameter name="variantAware" value="true"/>
+  <parameter name="cfgFilePath" value="output"/>
+  <parameter name="generateAllModules" value="false"/>
+  <parameter name="generateIntoOneFile" value="false"/>
+  <parameter name="contentType" value="asc:4.3.0"/>
+  </generator>
+ </extension>
+  
+ <extension point="dreisoft.tresos.generator.api.plugin.generator" id="IntegrationFramework_TS_T40D17M8I1R0_NGGeneratorId">
+          <generator moduleId="IntegrationFramework_TS_T40D17M8I1R0"
+                     class="dreisoft.tresos.generator.ng.api.NGGenerator"
+                     id="IntegrationFramework_TS_T40D17M8I1R0_UniqueNGGeneratorId"
+                     modes="generate,generate_PC,generate_PB,verify"
+                     step="post"> <!-- run after code-generation -->
+              <parameter name="buildfile" value="ant_generator.xml"/>
+           <parameter name="variantAware" value="true"/>
+          </generator>
+  </extension>
+      <extension point="dreisoft.tresos.launcher2.plugin.generator"
+              id="IntegrationFramework_TS_T40D17M8I1R0_GeneratorId"
+              name="IntegrationFramework_TS_T40D17M8I1R0 Generator">
+    <generator moduleId="IntegrationFramework_TS_T40D17M8I1R0"
+               class="dreisoft.tresos.launcher2.generator.TemplateBasedCodeGenerator">
+  
+    <parameter name="variantAware" value="true"/>
+    <!-- swcd modes and template path parameters -->
+    <parameter name="mode_type" mode="generate_swcd" value="generate"></parameter>
+    <parameter name="mode_type" mode="verify_swcd" value="verify"></parameter>
+    <parameter name="templates" mode="generate_swcd,verify_swcd" value="generate_swcd"></parameter>   
+
+      <!-- common template path parameters -->
+      <parameter name="templates" mode="generate,verify" value="generate,generate_PC"/>
+      <!-- custom generators -->
+      <parameter name="templates" mode="generate_PC" value="generate_PC"/>
+      <!-- custom template paths -->
+      <parameter name="mode_type" mode="generate_PC" value="generate"/>
+    </generator>
+  </extension>
+ 
+  <extension point="org.eclipse.help.toc">
+    <toc file="anchors.xml" primary="true"/>
+    <toc file="$nl$/IntegrationFramework/toc.xml" primary="false"/>
+    <!-- toc file="$nl$/ReleaseNotes/toc.xml" primary="false"/ !-->
+  </extension>
+</plugin>

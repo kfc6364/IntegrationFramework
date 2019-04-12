@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?NLS TYPE="org.eclipse.help.toc"?>
+
+<!--
+*   @file    anchors.xml
+*   @version 0.8.1
+*
+*   @brief   AUTOSAR IntegrationFramework_TS_T40D17M8I1R0 - Tresos Studio plugin documentation configuration file.
+*   @details This file contains the links to the plugin documents for IntegrationFramework Tresos Studio plugin.
+-->
+<!--
+====================================================================================================
+*   Project              : AUTOSAR 4.3 MCAL
+*   Platform             : CORTEXM
+*   Peripheral           : Pit
+*   Dependencies         : none
+*
+*   Autosar Version      : 4.3.1
+*   Autosar Revision     : ASR_REL_4_3_REV_0001
+*   Autosar Conf.Variant :
+*   SW Version           : 0.8.1
+*   Build Version        : S32K2XXS32K2XX_MCAL_0_8_1_EAR_ASR_REL_4_3_REV_0001_20180420
+*
+*   Copyright 2006-2016 Freescale Semiconductor, Inc.  Copyright 2017-2018 NXP
+*   All Rights Reserved.
+====================================================================================================
+====================================================================================================
+====================================================================================================
+-->
+
+
+<toc label="IntegrationFramework CORTEXM/S32K2XXM7">
+</toc>
